@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
@@ -21,6 +20,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"crypto/tls"
 
 	"github.com/elazarl/goproxy"
 	goproxy_image "github.com/elazarl/goproxy/ext/image"

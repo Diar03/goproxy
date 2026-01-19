@@ -1,8 +1,9 @@
 package main
 
 import (
-	"crypto/tls"
 	"sync"
+
+	"crypto/tls"
 )
 
 type CertStorage struct {

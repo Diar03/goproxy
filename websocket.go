@@ -2,12 +2,13 @@ package goproxy
 
 import (
 	"bufio"
-	"crypto/tls"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"crypto/tls"
 )
 
 func headerContains(header http.Header, name string, value string) bool {

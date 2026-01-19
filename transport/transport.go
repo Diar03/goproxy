@@ -14,7 +14,6 @@ package transport
 import (
 	"bufio"
 	"compress/gzip"
-	"crypto/tls"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -27,6 +26,8 @@ import (
 	"os"
 	"strings"
 	"sync"
+
+	tls "github.com/refraction-networking/utls"
 )
 
 // DefaultTransport is the default implementation of Transport and is
@@ -395,7 +396,8 @@ func (t *Transport) getConn(cm *connectMethod) (*persistConn, error) {
 
 	if cm.targetScheme == "https" {
 		// Initiate TLS and check remote host name against certificate.
-		conn = tls.Client(conn, t.TLSClientConfig)
+		// conn = tls.Client(conn, t.TLSClientConfig)
+		conn = tls.UClient(conn, t.TLSClientConfig, tls.HelloChrome_Auto)
 		if err = conn.(*tls.Conn).Handshake(); err != nil {
 			return nil, err
 		}
@@ -471,7 +473,6 @@ func useProxy(addr string) bool {
 // http://proxy.com|http           http to proxy, http to anywhere after that
 //
 // Note: no support to https to the proxy yet.
-//
 type connectMethod struct {
 	proxyURL     *url.URL // nil for no proxy, else full proxy URL
 	targetScheme string   // "http" or "https"
