@@ -15,6 +15,8 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+
+	utls "github.com/refraction-networking/utls"
 )
 
 type ConnectActionLiteral int
@@ -412,7 +414,7 @@ func (proxy *ProxyHttpServer) NewConnectDialToProxyWithHandler(https_proxy strin
 			if err != nil {
 				return nil, err
 			}
-			c = tls.Client(c, proxy.Tr.TLSClientConfig)
+			c = utls.UClient(c, nil, utls.HelloRandomizedALPN)
 			connectReq := &http.Request{
 				Method: "CONNECT",
 				URL:    &url.URL{Opaque: addr},
