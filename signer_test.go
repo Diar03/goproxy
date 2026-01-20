@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"crypto/tls"
+	tls "github.com/refraction-networking/utls"
 )
 
 func orFatal(msg string, err error, t *testing.T) {

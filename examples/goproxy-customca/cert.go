@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/x509"
 
-	"crypto/tls"
+	tls "github.com/refraction-networking/utls"
 
 	"github.com/elazarl/goproxy"
 )

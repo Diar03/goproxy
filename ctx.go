@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"regexp"
 
-	"crypto/tls"
+	tls "github.com/refraction-networking/utls"
 )
 
 // ProxyCtx is the Proxy context, contains useful information about every request. It is passed to

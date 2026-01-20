@@ -2,7 +2,6 @@ package goproxy
 
 import (
 	"bufio"
-	"crypto/tls"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -16,7 +15,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	utls "github.com/refraction-networking/utls"
+	tls "github.com/refraction-networking/utls"
 )
 
 type ConnectActionLiteral int
@@ -414,7 +413,7 @@ func (proxy *ProxyHttpServer) NewConnectDialToProxyWithHandler(https_proxy strin
 			if err != nil {
 				return nil, err
 			}
-			c = utls.UClient(c, nil, utls.HelloRandomizedALPN)
+			c = tls.UClient(c, nil, tls.HelloRandomizedALPN)
 			connectReq := &http.Request{
 				Method: "CONNECT",
 				URL:    &url.URL{Opaque: addr},

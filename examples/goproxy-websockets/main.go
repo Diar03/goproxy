@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"crypto/tls"
+	tls "github.com/refraction-networking/utls"
 
 	"github.com/elazarl/goproxy"
 	"github.com/gorilla/websocket"

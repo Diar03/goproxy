@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"strings"
 
-	"crypto/tls"
+	tls "github.com/refraction-networking/utls"
 )
 
 func headerContains(header http.Header, name string, value string) bool {

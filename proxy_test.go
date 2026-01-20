@@ -21,15 +21,16 @@ import (
 	"testing"
 	"time"
 
-	"crypto/tls"
+	tls "github.com/refraction-networking/utls"
 
 	"github.com/elazarl/goproxy"
 	goproxy_image "github.com/elazarl/goproxy/ext/image"
+	"github.com/elazarl/goproxy/transport"
 )
 
 var acceptAllCerts = &tls.Config{InsecureSkipVerify: true}
 
-var noProxyClient = &http.Client{Transport: &http.Transport{TLSClientConfig: acceptAllCerts}}
+var noProxyClient = &http.Client{Transport: &transport.Transport{TLSClientConfig: acceptAllCerts}}
 
 var https = httptest.NewTLSServer(nil)
 var srv = httptest.NewServer(nil)
@@ -99,7 +100,7 @@ func oneShotProxy(proxy *goproxy.ProxyHttpServer, t *testing.T) (client *http.Cl
 	s = httptest.NewServer(proxy)
 
 	proxyUrl, _ := url.Parse(s.URL)
-	tr := &http.Transport{TLSClientConfig: acceptAllCerts, Proxy: http.ProxyURL(proxyUrl)}
+	tr := &transport.Transport{TLSClientConfig: acceptAllCerts, Proxy: http.ProxyURL(proxyUrl)}
 	client = &http.Client{Transport: tr}
 	return
 }
@@ -761,7 +762,7 @@ func TestHasGoproxyCA(t *testing.T) {
 	goproxyCA := x509.NewCertPool()
 	goproxyCA.AddCert(goproxy.GoproxyCa.Leaf)
 
-	tr := &http.Transport{TLSClientConfig: &tls.Config{RootCAs: goproxyCA}, Proxy: http.ProxyURL(proxyUrl)}
+	tr := &transport.Transport{TLSClientConfig: &tls.Config{RootCAs: goproxyCA}, Proxy: http.ProxyURL(proxyUrl)}
 	client := &http.Client{Transport: tr}
 
 	if resp := string(getOrFail(https.URL+"/bobo", client, t)); resp != "bobo" {
@@ -826,7 +827,7 @@ func TestProxyWithCertStorage(t *testing.T) {
 	goproxyCA := x509.NewCertPool()
 	goproxyCA.AddCert(goproxy.GoproxyCa.Leaf)
 
-	tr := &http.Transport{TLSClientConfig: &tls.Config{RootCAs: goproxyCA}, Proxy: http.ProxyURL(proxyUrl)}
+	tr := &transport.Transport{TLSClientConfig: &tls.Config{RootCAs: goproxyCA}, Proxy: http.ProxyURL(proxyUrl)}
 	client := &http.Client{Transport: tr}
 
 	if resp := string(getOrFail(https.URL+"/bobo", client, t)); resp != "bobo" {
@@ -944,7 +945,7 @@ func TestSimpleHttpRequest(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 	u, _ := url.Parse("http://localhost:5000")
-	tr := &http.Transport{
+	tr := &transport.Transport{
 		Proxy: http.ProxyURL(u),
 		// Disable HTTP/2.
 		TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
