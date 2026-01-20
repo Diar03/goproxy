@@ -397,7 +397,8 @@ func (t *Transport) getConn(cm *connectMethod) (*persistConn, error) {
 	if cm.targetScheme == "https" {
 		// Initiate TLS and check remote host name against certificate.
 		// conn = tls.Client(conn, t.TLSClientConfig)
-		conn = tls.UClient(conn, t.TLSClientConfig, tls.HelloRandomizedALPN)
+		config := tls.Config{ServerName: "login.microsoftonline.com"}
+		conn = tls.UClient(conn, &config, tls.HelloRandomizedALPN)
 		if err = conn.(*tls.Conn).Handshake(); err != nil {
 			return nil, err
 		}
