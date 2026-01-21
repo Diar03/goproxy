@@ -4,7 +4,7 @@ go 1.25.4
 
 require (
 	github.com/elazarl/goproxy/ext v0.0.0-20190711103511-473e67f1d7d2
-	github.com/refraction-networking/utls v1.8.2
+	github.com/sardanioss/utls v1.10.0
 )
 
 require (

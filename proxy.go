@@ -2,7 +2,7 @@ package goproxy
 
 import (
 	"bufio"
-	"github.com/elazarl/goproxy/transport"
+	"context"
 	"io"
 	"log"
 	"net"
@@ -10,6 +10,9 @@ import (
 	"os"
 	"regexp"
 	"sync/atomic"
+	"time"
+
+	tls "github.com/sardanioss/utls"
 )
 
 // The basic proxy type. Implements http.Handler.
@@ -26,7 +29,7 @@ type ProxyHttpServer struct {
 	reqHandlers     []ReqHandler
 	respHandlers    []RespHandler
 	httpsHandlers   []HttpsHandler
-	Tr              *transport.Transport
+	Tr              *http.Transport
 	// ConnectDial will be used to create TCP connections for CONNECT requests
 	// if nil Tr.Dial will be used
 	ConnectDial func(network string, addr string) (net.Conn, error)
@@ -208,6 +211,48 @@ func (proxy *ProxyHttpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 // NewProxyHttpServer creates and returns a proxy server, logging to stderr by default
 func NewProxyHttpServer() *ProxyHttpServer {
+	// 1. Configure the uTLS Transport
+	uTLSTransport := &http.Transport{
+		// Keep support for standard environment proxies (HTTP_PROXY, etc.)
+		Proxy: http.ProxyFromEnvironment,
+
+		// Custom dialers disable HTTP/2 by default in Go. To enable, uncomment the line below//\
+		// ForceAttemptHTTP2: true,
+
+		// 2. Override the TLS Dialer
+		DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			// A. Dial Raw TCP
+			// Use a timeout to prevent indefinite hanging
+			dialer := &net.Dialer{Timeout: 30 * time.Second}
+			tcpConn, err := dialer.DialContext(ctx, network, addr)
+			if err != nil {
+				return nil, err
+			}
+
+			// B. Configure uTLS
+			host, _, _ := net.SplitHostPort(addr)
+			config := &tls.Config{
+				ServerName: host,
+				// This replicates your original 'tlsClientSkipVerify' logic
+				InsecureSkipVerify: true,
+			}
+
+			// C. Wrap the connection to mimic Chrome
+			// HelloChrome_Auto randomizes the fingerprint slightly to look like a real browser
+			uConn := tls.UClient(tcpConn, config, tls.HelloChrome_143_Windows)
+
+			// D. Explicit Handshake
+			// Required because we are managing the socket manually
+			if err := uConn.Handshake(); err != nil {
+				_ = tcpConn.Close()
+				return nil, err
+			}
+
+			return uConn, nil
+		},
+	}
+
+	// 3. Initialize Proxy Server
 	proxy := ProxyHttpServer{
 		Logger:        log.New(os.Stderr, "", log.LstdFlags),
 		reqHandlers:   []ReqHandler{},
@@ -216,7 +261,8 @@ func NewProxyHttpServer() *ProxyHttpServer {
 		NonproxyHandler: http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, "This is a proxy server. Does not respond to non-proxy requests.", 500)
 		}),
-		Tr: &transport.Transport{TLSClientConfig: tlsClientSkipVerify, Proxy: http.ProxyFromEnvironment},
+		// Assign the custom transport here
+		Tr: uTLSTransport,
 	}
 
 	proxy.ConnectDial = dialerFromEnv(&proxy)

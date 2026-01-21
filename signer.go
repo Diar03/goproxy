@@ -16,7 +16,7 @@ import (
 	"sort"
 	"time"
 
-	tls "github.com/refraction-networking/utls"
+	"crypto/tls"
 )
 
 func hashSorted(lst []string) []byte {

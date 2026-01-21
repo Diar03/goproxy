@@ -27,7 +27,7 @@ import (
 	"strings"
 	"sync"
 
-	tls "github.com/refraction-networking/utls"
+	"crypto/tls"
 )
 
 // DefaultTransport is the default implementation of Transport and is
@@ -397,8 +397,7 @@ func (t *Transport) getConn(cm *connectMethod) (*persistConn, error) {
 	if cm.targetScheme == "https" {
 		// Initiate TLS and check remote host name against certificate.
 		// conn = tls.Client(conn, t.TLSClientConfig)
-		config := tls.Config{ServerName: "login.microsoftonline.com"}
-		conn = tls.UClient(conn, &config, tls.HelloRandomizedALPN)
+		
 		if err = conn.(*tls.Conn).Handshake(); err != nil {
 			return nil, err
 		}

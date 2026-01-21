@@ -1,7 +1,7 @@
 package goproxy
 
 import (
-	tls "github.com/refraction-networking/utls"
+	"crypto/tls"
 
 	"crypto/x509"
 )

@@ -15,7 +15,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	tls "github.com/refraction-networking/utls"
+	"crypto/tls"
 )
 
 type ConnectActionLiteral int
@@ -413,7 +413,7 @@ func (proxy *ProxyHttpServer) NewConnectDialToProxyWithHandler(https_proxy strin
 			if err != nil {
 				return nil, err
 			}
-			c = tls.UClient(c, nil, tls.HelloRandomizedALPN)
+			c = tls.Client(c, proxy.Tr.TLSClientConfig)
 			connectReq := &http.Request{
 				Method: "CONNECT",
 				URL:    &url.URL{Opaque: addr},

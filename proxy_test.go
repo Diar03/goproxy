@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
@@ -20,8 +21,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	tls "github.com/refraction-networking/utls"
 
 	"github.com/elazarl/goproxy"
 	goproxy_image "github.com/elazarl/goproxy/ext/image"
@@ -945,7 +944,7 @@ func TestSimpleHttpRequest(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 	u, _ := url.Parse("http://localhost:5000")
-	tr := &transport.Transport{
+	tr := &http.Transport{
 		Proxy: http.ProxyURL(u),
 		// Disable HTTP/2.
 		TLSNextProto: make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
