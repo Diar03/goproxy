@@ -235,6 +235,7 @@ func NewProxyHttpServer() *ProxyHttpServer {
 				ServerName: host,
 				// This replicates your original 'tlsClientSkipVerify' logic
 				InsecureSkipVerify: true,
+				NextProtos:         []string{"http/1.1"},
 			}
 
 			// C. Wrap the connection to mimic Chrome
