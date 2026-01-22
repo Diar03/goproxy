@@ -240,12 +240,26 @@ func NewProxyHttpServer() *ProxyHttpServer {
 
 			// C. Wrap the connection to mimic Chrome
 			// HelloChrome_Auto randomizes the fingerprint slightly to look like a real browser
-			uConn := tls.UClient(tcpConn, config, tls.HelloChrome_143_Windows)
+			uConn := tls.UClient(tcpConn, config, tls.HelloId) // Start with a blank ID
 
-			// D. Explicit Handshake
-			// Required because we are managing the socket manually
+			// 1. Get the Spec for Chrome 143
+			spec := tls.HelloChrome_143_Windows.Spec()
+
+			// 2. Find and modify the ALPN extension to ONLY allow http/1.1
+			for i, ext := range spec.Extensions {
+				if alpnExt, ok := ext.(*tls.ALPNExtension); ok {
+					alpnExt.AlpnProtocols = []string{"http/1.1"}
+					spec.Extensions[i] = alpnExt
+				}
+			}
+
+			// 3. Apply the modified spec to your connection
+			if err := uConn.ApplyPreset(&spec); err != nil {
+				return nil, err
+			}
+
+			// 4. Perform the Handshake
 			if err := uConn.Handshake(); err != nil {
-				_ = tcpConn.Close()
 				return nil, err
 			}
 
