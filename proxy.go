@@ -3,6 +3,7 @@ package goproxy
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net"
@@ -221,46 +222,57 @@ func NewProxyHttpServer() *ProxyHttpServer {
 
 		// 2. Override the TLS Dialer
 		DialTLSContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			// A. Dial Raw TCP
-			// Use a timeout to prevent indefinite hanging
 			dialer := &net.Dialer{Timeout: 30 * time.Second}
 			tcpConn, err := dialer.DialContext(ctx, network, addr)
 			if err != nil {
 				return nil, err
 			}
 
-			// B. Configure uTLS
 			host, _, _ := net.SplitHostPort(addr)
 			config := &tls.Config{
-				ServerName: host,
-				// This replicates your original 'tlsClientSkipVerify' logic
+				ServerName:         host,
 				InsecureSkipVerify: true,
-				NextProtos:         []string{"http/1.1"},
 			}
 
-			// C. Wrap the connection to mimic Chrome
-			// HelloChrome_Auto randomizes the fingerprint slightly to look like a real browser
-			uConn := tls.UClient(tcpConn, config, tls.HelloId) // Start with a blank ID
+			// CHANGE 1: Use 'tls.HelloCustom'
+			// You passed 'tls.HelloId' which is a Type name, not a value.
+			// You must pass 'tls.HelloCustom' to tell uTLS "Wait for me to provide a spec manually".
+			uConn := tls.UClient(tcpConn, config, tls.HelloCustom)
 
-			// 1. Get the Spec for Chrome 143
-			spec := tls.HelloChrome_143_Windows.Spec()
+			// CHANGE 2: Use 'tls.UTLSIdToSpec'
+			// 'HelloChrome_143_Windows' is just a number (ID). It does not have a .Spec() method.
+			// You must use the helper function UTLSIdToSpec to get the blueprint.
+			spec, err := tls.UTLSIdToSpec(tls.HelloChrome_143_Windows)
+			if err != nil {
+				_ = tcpConn.Close()
+				return nil, fmt.Errorf("failed to get spec: %w", err)
+			}
 
-			// 2. Find and modify the ALPN extension to ONLY allow http/1.1
+			// 3. Patch the ALPN Extension
 			for i, ext := range spec.Extensions {
+				// We look for the ALPN extension pointer
 				if alpnExt, ok := ext.(*tls.ALPNExtension); ok {
+					// We modify the object directly.
+					// Note: Since 'alpnExt' is a pointer, modifying it here automatically
+					// updates it inside the 'spec.Extensions' slice.
 					alpnExt.AlpnProtocols = []string{"http/1.1"}
+
+					// We don't strictly need to reassign spec.Extensions[i] = alpnExt,
+					// but it doesn't hurt.
 					spec.Extensions[i] = alpnExt
 				}
 			}
 
-			// 3. Apply the modified spec to your connection
+			// 4. Apply the modified preset
 			if err := uConn.ApplyPreset(&spec); err != nil {
-				return nil, err
+				_ = tcpConn.Close()
+				return nil, fmt.Errorf("failed to apply preset: %w", err)
 			}
 
-			// 4. Perform the Handshake
+			// 5. Handshake
 			if err := uConn.Handshake(); err != nil {
-				return nil, err
+				_ = tcpConn.Close()
+				return nil, fmt.Errorf("handshake failed: %w", err)
 			}
 
 			return uConn, nil
