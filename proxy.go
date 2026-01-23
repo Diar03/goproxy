@@ -217,11 +217,10 @@ func NewProxyHttpServer() *ProxyHttpServer {
 	if err != nil {
 		panic(err)
 	}
-	defer f.Close()
+	// keep the file open for TLS key logging
 	uTLSTransport := &http.Transport{
 		// Keep support for standard environment proxies (HTTP_PROXY, etc.)
-		Proxy:        http.ProxyFromEnvironment,
-		KeylogWriter: f,
+		Proxy: http.ProxyFromEnvironment,
 		// Custom dialers disable HTTP/2 by default in Go. To enable, uncomment the line below//\
 		// ForceAttemptHTTP2: true,
 
@@ -237,6 +236,8 @@ func NewProxyHttpServer() *ProxyHttpServer {
 			config := &tls.Config{
 				ServerName:         host,
 				InsecureSkipVerify: true,
+				// log TLS master secrets to file
+				KeyLogWriter: f,
 			}
 
 			// CHANGE 1: Use 'tls.HelloCustom'
