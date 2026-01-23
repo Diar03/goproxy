@@ -213,10 +213,15 @@ func (proxy *ProxyHttpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 // NewProxyHttpServer creates and returns a proxy server, logging to stderr by default
 func NewProxyHttpServer() *ProxyHttpServer {
 	// 1. Configure the uTLS Transport
+	f, err := os.OpenFile("./go_master_secret.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
 	uTLSTransport := &http.Transport{
 		// Keep support for standard environment proxies (HTTP_PROXY, etc.)
-		Proxy: http.ProxyFromEnvironment,
-
+		Proxy:        http.ProxyFromEnvironment,
+		KeylogWriter: f,
 		// Custom dialers disable HTTP/2 by default in Go. To enable, uncomment the line below//\
 		// ForceAttemptHTTP2: true,
 

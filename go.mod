@@ -13,5 +13,3 @@ require (
 	golang.org/x/crypto v0.36.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 )
-
-replace github.com/Diar03/goproxy => github.com/Diar03/goproxy v0.0.0-20220622134552-7d0e0c658440
